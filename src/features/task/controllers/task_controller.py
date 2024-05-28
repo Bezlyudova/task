@@ -1,0 +1,198 @@
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, Path, Query
+
+from src.base.base_schemas import BasePaginationSchema
+from src.db.manager import current_user
+from src.features.employee.entities.employee_entity import Employee
+from src.features.task.schemas.task_schema import TaskSchema
+from src.features.task.schemas.task_schema_create_assigner import TaskSchemaCreateAssigner
+from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilterExtended
+from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
+from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
+from src.features.task.services.task_service import TaskService
+from src.task_state_enum import TaskStateEnum
+
+router = APIRouter(prefix="/api/task", tags=["task"])
+
+
+@router.get("/check_deadline/")
+async def check_deadline(
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+):
+    return await service.check_deadline()
+
+
+@router.post("/", response_model=TaskSchema)
+async def create(
+    create_schema: TaskSchemaCreateAssigner,
+    # create_schema: TaskSchemaCreate,
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> TaskSchema:
+    return await service.create(user=user, schema_create=create_schema)
+
+
+@router.get("/{id}", response_model=TaskSchema)
+async def get_by_id(
+    id: int = Path(example=10, description="ID искомой задачи"),
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> TaskSchema:
+    return await service.get_by_id(user=user, id=id)
+
+
+@router.patch("/{id}")
+async def update(
+    update_schema: TaskSchemaUpdateAssigner,
+    id: int = Path(example=10, description="ID задачи которая будет обновлена"),
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> TaskSchema:
+    return await service.update(user=user, id=id, schema_update=update_schema)
+
+
+@router.delete("/")
+async def delete_list(
+    ids: List[int] = Query(default=None, example=[1, 2, 3], description="IDs"),
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> List[int]:
+    await service.soft_delete_all(user=user, ids=ids)
+    return ids
+
+#
+# @router.patch("/hide/")
+# async def hide_list(
+#     task_hide_schema: TaskSchemaHide,
+#     account: Account = Depends(get_account()),
+#     service=Depends(TaskService),
+# ) -> List[int]:
+#     await service.hide_all(task_hide_schema=task_hide_schema)
+#     return task_hide_schema.task_ids
+#
+
+@router.delete("/{id}")
+async def delete(
+    id: int = Path(
+        example=10, description="ID задачи которая будет помечена как удаленная"
+    ),
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> TaskSchema:
+    return await service.soft_delete(user=user, id=id)
+
+#
+# @router.patch("/{task_id}/assigner")
+# async def set_assigner_task_status(
+#     update_schema: TaskAndAssignerDumpSchemaUpdate,
+#     task_id: int = Path(example=10, description="ID задачи"),
+#     account: Account = Depends(get_account()),
+#     service=Depends(TaskService),
+# ) -> TaskAndAssignerSchema:
+#     return await service.set_assigner_task_status(task_id, update_schema)
+
+
+@router.get("/")
+async def get(
+    without_deleted: bool = Query(
+        False,
+        example=False,
+        description="Надо ли вытягивать объекты помеченные как удаленные? True - надо, False - не надо",
+    ),
+    name: Optional[str] = Query(
+        None, example="Отослать письмо", description="Название задачи"
+    ),
+    assigner_id: Optional[int] = Query(
+        None, example="1", description="Кто исполнитель"
+    ),
+    observer_id: Optional[int] = Query(
+        None, example="1", description="Кто наблюдатель"
+    ),
+    states: List[TaskStateEnum] = Query(
+        None,
+        example=["WORKS", "DRAFT"],
+        description="Список приемлемых статусов",
+    ),
+    limit: int = Query(10, example=10, description="Размер страницы"),
+    page: int = Query(1, example=1, description="Номер страницы"),
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> BasePaginationSchema[TaskSchemaMinimal]:
+    return await service.get_filtered_data(
+        user=user,
+        filter_schema=TaskSchemaFilterExtended(
+            name=name,
+            assigner_id=assigner_id,
+            observer_id=observer_id,
+            state=states
+        ),
+        without_deleted=without_deleted,
+        page_number=page,
+        page_size=limit,
+    )
+
+
+@router.get("/assignedToMe/unreaded/")
+async def get_count_unreaded_task(
+    service=Depends(TaskService),
+    user: Employee = Depends(current_user)
+) -> int:
+    return await service.get_count_unreaded_task(user=user)
+
+
+# @router.post("/startTask/")
+# async def start_task(
+#     task_id: int = Query(1, example=1, description="ID стартуемой таски"),
+#     new_dead_line: Optional[datetime.datetime] = Query(
+#         None,
+#         example=datetime.datetime.now(),
+#         description="[НЕОБЯЗАТЕЛЬНОЕ ПОЛЕ]Время нового дедлайна, если вдруг надо сдвинуть.",
+#     ),
+#     account: Account = Depends(get_account()),
+#     service=Depends(TaskService),
+# ):
+#     return await service.start_task(task_id, new_dead_line)
+#
+#
+# @router.post("/stopTask/")
+# async def stop_task(
+#     task_id: int = Query(1, example=1, description="ID стопуемой таски"),
+#     account: Account = Depends(get_account()),
+#     service=Depends(TaskService),
+# ):
+#     return await service.stop_task(task_id)
+#
+#
+# @router.patch("/completeTask/")
+# async def complete_task(
+#     task_id: int = Query(
+#         1, example=1, description="ID завершаемой (помечаем как ВЫПОЛНЕННАЯ) таски"
+#     ),
+#     account: Account = Depends(get_account()),
+#     service=Depends(TaskService),
+# ):
+#     return await service.complete_task_for_all(task_id)
+#
+#
+# @router.get("/typeOfTasks/")
+# async def get_all_types_of_tasks(
+#     account: Account = Depends(get_account()),
+# ):
+#     return [e.value for e in TaskType]
+#
+#
+# @router.get("/statesOfTasks/")
+# async def get_all_states_of_tasks(
+#     account: Account = Depends(get_account()),
+# ):
+#     return [e.value for e in TaskStateEnum]
+#
+#
+# @router.get("/allTypesOfEntity/")
+# async def get_all_entity_type(
+#     account: Account = Depends(get_account()),
+# ):
+#     return [e.value for e in TypeOfEntity]
+#

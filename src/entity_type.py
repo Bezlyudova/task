@@ -1,0 +1,10 @@
+import enum
+
+
+class TypeOfEntity(enum.Enum):
+    TASK = "TASK"
+    TASK_AND_ASSIGNER = "TASK_AND_ASSIGNER"
+    EMPLOYEE = "EMPLOYEE"
+    DEPARTMENT = "DEPARTMENT"
+    POSITION = "POSITION"
+    ORGANISATION = "ORGANISATION"
