@@ -3,8 +3,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Path
 
 from src.base.base_schemas import BasePaginationSchema
-from src.db.manager import current_user
-from src.features.employee.entities.employee_entity import Employee
 from src.features.organisation.schemas.organisation_schema import OrganisationSchema
 from src.features.organisation.schemas.organisation_schema_create import OrganisationSchemaCreate
 from src.features.organisation.schemas.organisation_schema_filter import OrganisationSchemaFilter
@@ -19,18 +17,16 @@ router = APIRouter(prefix="/api/organisation", tags=["organisation"])
 async def create(
         schema_create: OrganisationSchemaCreate,
         service=Depends(OrganisationService),
-        user: Employee = Depends(current_user)
 ) -> OrganisationSchema:
-    return await service.create(user=user, schema_create=schema_create)
+    return await service.create(schema_create=schema_create)
 
 
 @router.get("/{id}")
 async def get_by_id(
         id: int = Path(example=10, description="ID искомой организации"),
         service=Depends(OrganisationService),
-        user: Employee = Depends(current_user)
 ) -> OrganisationSchema:
-    return await service.get_by_id(user=user, id=id)
+    return await service.get_by_id(id=id)
 
 
 @router.patch("/{id}")
@@ -38,9 +34,8 @@ async def update(
         schema_update: OrganisationSchemaUpdate,
         id: int = Path(example=10, description="ID организации, которая должна быть изменена"),
         service=Depends(OrganisationService),
-        user: Employee = Depends(current_user)
 ) -> OrganisationSchema:
-    return await service.update(user=user, id=id, schema_update=schema_update)
+    return await service.update(id=id, schema_update=schema_update)
 
 
 @router.delete("/{id}")
@@ -49,9 +44,8 @@ async def delete(
             example=10, description="ID организации, которая должна быть помечена как удаленная"
         ),
         service=Depends(OrganisationService),
-        user: Employee = Depends(current_user)
 ) -> OrganisationSchema:
-    return await service.soft_delete(user=user, id=id)
+    return await service.soft_delete(id=id)
 
 
 @router.get("/")
@@ -75,10 +69,8 @@ async def get(
         limit: int = Query(10, example=10, description="Размер страницы"),
         page: int = Query(1, example=1, description="Номер страницы"),
         service=Depends(OrganisationService),
-        user: Employee = Depends(current_user)
 ) -> BasePaginationSchema[OrganisationSchemaMinimal]:
     return await service.get_filtered_data(
-        user=user,
         filter_schema=OrganisationSchemaFilter(
             name=name,
             phone_number=phone_number,
@@ -94,7 +86,6 @@ async def get(
 async def delete_list(
         ids: List[int] = Query(default=None, example=[1, 2, 3], description="IDs"),
         service=Depends(OrganisationService),
-        user: Employee = Depends(current_user)
 ) -> List[int]:
-    await service.soft_delete_all(user=user, ids=ids)
+    await service.soft_delete_all(ids=ids)
     return ids

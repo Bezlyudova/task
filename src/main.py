@@ -32,19 +32,19 @@ app.include_router(task_controller.router)
 
 #
 # @app.get("/protected-route")
-# def protected_route(user: Employee = Depends(current_user)):
+# def protected_route():
 #     return f"Hello, {user.email}"
 
 
 app.include_router(
     fastapi_users.get_auth_router(auth_backend),
-    prefix="/auth/jwt",
+    prefix="/api/docs/auth/jwt",
     tags=["auth"],
 )
 
 app.include_router(
     fastapi_users.get_register_router(EmployeeSchema, EmployeeSchemaCreate),
-    prefix="/auth",
+    prefix="/api/docs/auth",
     tags=["auth"],
 )
 

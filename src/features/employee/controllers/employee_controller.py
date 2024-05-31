@@ -3,8 +3,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, Path
 
 from src.base.base_schemas import BasePaginationSchema
-from src.db.manager import current_user
-from src.features.employee.entities.employee_entity import Employee
 from src.features.employee.schemas.employee_schema import EmployeeSchema
 from src.features.employee.schemas.employee_schema_create import EmployeeSchemaCreate
 from src.features.employee.schemas.employee_schema_filter import EmployeeSchemaFilter
@@ -16,28 +14,46 @@ router = APIRouter(prefix="/api/employee", tags=["employee"])
 
 @router.get("/me/")
 async def get_account(
-    user: Employee = Depends(current_user),
     service=Depends(EmployeeService),
 ):
-    return await service.get_by_id_without_activity(user=user, id=user.id)
+    return await service.get_by_id_without_activity(id=1)
 
+@router.get("/login/")
+async def login(
+    service=Depends(EmployeeService),
+    login: Optional[str] = Query(
+        None,
+        example="zubenko@belmail.by",
+        description="Email",
+    ),
+    password: Optional[str] = Query(
+        None,
+        example="zubenko@belmail.by",
+        description="Email",
+    ),
+) -> EmployeeSchema:
+    return await service.login(login=login)
+
+@router.get("/logout/")
+async def logout(
+    service=Depends(EmployeeService),
+):
+    return "До скорых встреч!"
 
 @router.post("/")
 async def create(
         schema_create: EmployeeSchemaCreate,
         service=Depends(EmployeeService),
-        user: Employee = Depends(current_user)
 ) -> EmployeeSchema:
-    return await service.create(user=user, schema_create=schema_create)
+    return await service.create(schema_create=schema_create)
 
 
 @router.get("/{id}")
 async def get_by_id(
         id: int = Path(example=10, description="ID искомого работника"),
         service=Depends(EmployeeService),
-        user: Employee = Depends(current_user)
 ) -> EmployeeSchema:
-    return await service.get_by_id(user=user, id=id)
+    return await service.get_by_id(id=id)
 
 
 @router.patch("/{id}")
@@ -45,9 +61,8 @@ async def update(
         schema_update: EmployeeSchemaUpdate,
         id: int = Path(example=10, description="ID работника, который должен быть изменен"),
         service=Depends(EmployeeService),
-        user: Employee = Depends(current_user)
 ) -> EmployeeSchema:
-    return await service.update(user=user, id=id, schema_update=schema_update)
+    return await service.update(id=id, schema_update=schema_update)
 
 
 @router.delete("/{id}")
@@ -56,9 +71,8 @@ async def delete(
             example=10, description="ID работника, который должен быть помечен как удаленный"
         ),
         service=Depends(EmployeeService),
-        user: Employee = Depends(current_user)
 ) -> EmployeeSchema:
-    return await service.soft_delete(user=user, id=id)
+    return await service.soft_delete(id=id)
 
 
 @router.get("/")
@@ -95,10 +109,8 @@ async def get(
         limit: int = Query(10, example=10, description="Размер страницы"),
         page: int = Query(1, example=1, description="Номер страницы"),
         service=Depends(EmployeeService),
-        user: Employee = Depends(current_user)
 ) -> BasePaginationSchema[EmployeeSchemaMinimal]:
     return await service.get_filtered_data(
-        user=user,
         filter_schema=EmployeeSchemaFilter(
             post=post,
             name=name,
@@ -132,7 +144,6 @@ async def get(
 async def delete_list(
         ids: List[int] = Query(default=None, example=[1, 2, 3], description="IDs"),
         service=Depends(EmployeeService),
-        user: Employee = Depends(current_user)
 ) -> List[int]:
-    await service.soft_delete_all(user=user, ids=ids)
+    await service.soft_delete_all(ids=ids)
     return ids

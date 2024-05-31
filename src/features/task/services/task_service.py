@@ -45,16 +45,15 @@ class TaskService(BaseService):
     @transactional
     async def get_by_id(
             self,
-            user,
             id: int,
             *,
             session: Optional[AsyncSession] = None,
     ) -> TaskSchema:
-        result: TaskSchema = await self.repository.get_by_id(user=user, session=session, id=id)
+        result: TaskSchema = await self.repository.get_by_id(session=session, id=id)
         return result
 
     async def get_employee_ids_from_list_of_type_of_assigners(
-        self, user, list_of_ass: List[TypeOfAssignerSchema], session: AsyncSession
+        self, list_of_ass: List[TypeOfAssignerSchema], session: AsyncSession
     ):
         ids_list: List[int] = list()
 
@@ -63,7 +62,7 @@ class TaskService(BaseService):
                 ids_list.append(
                     (
                         await self.employee_service.get_by_id_without_activity(
-                            user=user, id=assigner.entity_id, session=session
+                            id=assigner.entity_id, session=session
                         )
                     ).id
                 )
@@ -76,20 +75,20 @@ class TaskService(BaseService):
         return list(set(ids_list))
 
     async def _assigners_transform(
-        self, user, schema_create: TaskSchemaCreateAssigner, session: AsyncSession
+        self, schema_create: TaskSchemaCreateAssigner, session: AsyncSession
     ) -> TaskSchemaCreateAssigner:
         # Трансформирую энтитию входящую в энтитю для создания тасков, потому что оно не хочет жрать
         # поля assigners и observers
 
         schema_create.assigners = (
             await self.get_employee_ids_from_list_of_type_of_assigners(
-                user=user, list_of_ass=schema_create.assigners,
+                list_of_ass=schema_create.assigners,
                 session=session if schema_create.assigners else [],
             )
         )
         schema_create.observers = (
             await self.get_employee_ids_from_list_of_type_of_assigners(
-                user=user, list_of_ass=schema_create.observers,
+                list_of_ass=schema_create.observers,
                 session=session if schema_create.observers else [],
             )
         )
@@ -98,27 +97,23 @@ class TaskService(BaseService):
 
     async def _create(
         self,
-        user,
         schema_create: TaskSchemaCreateAssigner,
-        # schema_create: TaskSchemaCreate,
         *,
         session: Optional[AsyncSession] = None,
         is_system: bool,
     ):
         task_schema_create: TaskSchemaCreate = TaskSchemaCreate(**dict(schema_create))
-        task_schema_create.create_id = user.id
+        task_schema_create.create_id = 1
 
         schema_create = await self._assigners_transform(
-            schema_create=schema_create, user=user, session=session
+            schema_create=schema_create, session=session
         )
 
         new_task = await self.repository.create(
-            user=user,
             session=session,
             schema_create=task_schema_create,
         )
         await self.add_assigners(
-            user=user,
             employees_ids=schema_create.assigners,
             task_id=new_task.id,
             type_of_assigner=TypeOfAssigner.ASSIGNER,
@@ -126,7 +121,6 @@ class TaskService(BaseService):
         )
 
         await self.add_assigners(
-            user=user,
             employees_ids=schema_create.observers,
             task_id=new_task.id,
             type_of_assigner=TypeOfAssigner.OBSERVER,
@@ -134,21 +128,20 @@ class TaskService(BaseService):
         )
 
         result = await self.repository.get_by_id_without_activity(
-            session=session, user=user, id=new_task.id
+            session=session, id=new_task.id
         )
         return result
 
     @transactional
     async def create(
         self,
-        user,
         schema_create: TaskSchemaCreateAssigner,
         # schema_create: TaskSchemaCreate,
         *,
         session: Optional[AsyncSession] = None,
     ) -> TaskSchema:
         return await self._create(
-            schema_create=schema_create, user=user, session=session, is_system=False
+            schema_create=schema_create, session=session, is_system=False
         )
 
     # @transactional
@@ -165,13 +158,12 @@ class TaskService(BaseService):
     @transactional
     async def update(
         self,
-        user,
         id: int,
         schema_update: TaskSchemaUpdateAssigner,
         *,
         session: Optional[AsyncSession] = None,
     ) -> TaskSchema:
-        task = await self.repository.get_by_id_without_activity(user=user, session=session, id=id, without_deleted=False)
+        task = await self.repository.get_by_id_without_activity(session=session, id=id, without_deleted=False)
         if task.state != TaskStateEnum.DRAFT.name:
             raise BaseExceptionCustom(
                 status_code=406,
@@ -187,9 +179,8 @@ class TaskService(BaseService):
                 session=session,
             )
             await self.add_assigners(
-                user=user,
                 employees_ids=await self.get_employee_ids_from_list_of_type_of_assigners(
-                    list_of_ass=schema_update.assigners, user=user, session=session
+                    list_of_ass=schema_update.assigners, session=session
                 ),
                 task_id=task.id,
                 type_of_assigner=TypeOfAssigner.ASSIGNER,
@@ -203,9 +194,8 @@ class TaskService(BaseService):
                 session=session,
             )
             await self.add_assigners(
-                user=user,
                 employees_ids=await self.get_employee_ids_from_list_of_type_of_assigners(
-                    list_of_ass=schema_update.observers, user=user, session=session
+                    list_of_ass=schema_update.observers, session=session
                 ),
                 task_id=task.id,
                 type_of_assigner=TypeOfAssigner.OBSERVER,
@@ -220,7 +210,7 @@ class TaskService(BaseService):
         new_schema_update.is_completed = task.is_completed
 
         return await self.repository.update(
-            user=user, session=session, id=id, schema_update=new_schema_update
+            session=session, id=id, schema_update=new_schema_update
         )
 
     # @transactional
@@ -243,7 +233,6 @@ class TaskService(BaseService):
     @transactional
     async def add_assigners(
         self,
-        user,
         employees_ids: List[int],
         task_id: int,
         type_of_assigner: TypeOfAssigner,
@@ -251,7 +240,6 @@ class TaskService(BaseService):
     ):
         for emp_id in employees_ids:
             await self.task_and_assigner_service.create(
-                user=user,
                 schema_create=TaskAndAssignerSchemaCreate(
                     employee_id=emp_id,
                     task_id=task_id,
@@ -265,18 +253,17 @@ class TaskService(BaseService):
     @transactional
     async def soft_delete(
         self,
-        user,
         id: int,
         *,
         session: Optional[AsyncSession] = None,
     ):
-        task: TaskSchema = await self.get_by_id_without_activity(user=user, id=id, session=session)
+        task: TaskSchema = await self.get_by_id_without_activity(id=id, session=session)
 
         await self.task_and_assigner_service.soft_delete_all(
-            user=user, ids=[assigner.id for assigner in task.assigners], session=session
+            ids=[assigner.id for assigner in task.assigners], session=session
         )
 
-        return await self.repository.soft_delete(user=user, id=id, session=session)
+        return await self.repository.soft_delete(id=id, session=session)
 
     @transactional
     async def soft_delete_all(
@@ -291,7 +278,6 @@ class TaskService(BaseService):
     @transactional
     async def get_filtered_data(
         self,
-        user,
         filter_schema: TaskSchemaFilter,
         without_deleted: bool = True,
         page_number: int = 1,
@@ -309,10 +295,9 @@ class TaskService(BaseService):
 
     async def get_count_unreaded_task(
         self,
-        user
     ) -> int:
         async with self.async_session.begin() as session:
-            return await self.repository.get_count_unreaded_task(user=user, session=session)
+            return await self.repository.get_count_unreaded_task(session=session)
 
     # @transactional
     # async def set_assigner_task_status(

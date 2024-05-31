@@ -29,7 +29,6 @@ class BaseService(
     @transactional
     async def create(
             self,
-            user,
             schema_create: BaseRepo.create_schema,
             *,
             session: Optional[AsyncSession] = None,
@@ -40,10 +39,9 @@ class BaseService(
         :return:
         """
         return await self.get_by_id_without_activity(
-            user=user,
             id=(
                 await self.repository.create(
-                    user=user, session=session, schema_create=schema_create
+                    session=session, schema_create=schema_create
                 )
             ).id,
             session=session,
@@ -52,7 +50,6 @@ class BaseService(
     @transactional
     async def create_system(
             self,
-            user,
             schema_create: BaseRepo.create_schema,
             *,
             session: Optional[AsyncSession] = None,
@@ -65,7 +62,7 @@ class BaseService(
         return await self.get_by_id_without_activity(
             id=(
                 await self.repository.create_system(
-                    session=session, schema_create=schema_create, user=user
+                    session=session, schema_create=schema_create
                 )
             ).id,
             session=session,
@@ -74,7 +71,6 @@ class BaseService(
     @transactional
     async def get_by_id(
             self,
-            user,
             id: int,
             *,
             session: Optional[AsyncSession] = None,
@@ -85,12 +81,11 @@ class BaseService(
         :param s: внешняя сессия
         :return:
         """
-        return await self.repository.get_by_id(user=user, session=session, id=id)
+        return await self.repository.get_by_id(session=session, id=id)
 
     @transactional
     async def get_by_id_without_activity(
             self,
-            user,
             id: int,
             *,
             session: Optional[AsyncSession] = None,
@@ -101,7 +96,7 @@ class BaseService(
         :param s: внешняя сессия
         :return:
         """
-        return await self.repository.get_by_id_without_activity(user=user, id=id, session=session)
+        return await self.repository.get_by_id_without_activity(id=id, session=session)
 
     async def get_entity_by_id(
             self,
@@ -114,21 +109,19 @@ class BaseService(
     @transactional
     async def update(
             self,
-            user,
             id: int,
             schema_update: BaseRepo.update_schema,
             *,
             session: Optional[AsyncSession] = None,
     ) -> BaseRepo.schema:
         result = await self.repository.update(
-            session=session, id=id, schema_update=schema_update, user=user
+            session=session, id=id, schema_update=schema_update
         )
         return result
 
     @transactional
     async def soft_delete(
             self,
-            user,
             id: int,
             *,
             session: Optional[AsyncSession] = None,
@@ -139,12 +132,11 @@ class BaseService(
         :session: Если существует внешняя сессия
         :return:
         """
-        return await self.repository.soft_delete(id=id, session=session, user=user)
+        return await self.repository.soft_delete(id=id, session=session)
 
     @transactional
     async def soft_delete_all(
             self,
-            user,
             ids: List[int],
             *,
             session: Optional[AsyncSession] = None,
@@ -155,7 +147,7 @@ class BaseService(
         :session: Если существует внешняя сессия
         :return:
         """
-        return await self.repository.soft_delete_all(user=user, ids=ids, session=session)
+        return await self.repository.soft_delete_all(ids=ids, session=session)
 
     @transactional
     async def hard_delete_all(
@@ -175,7 +167,6 @@ class BaseService(
     @transactional
     async def get_filtered_data(
             self,
-            user,
             filter_schema: BaseRepo.filter_schema,
             without_deleted: bool = False,
             page_number: int = 1,
@@ -192,7 +183,6 @@ class BaseService(
         :return:
         """
         return await self.repository.get_with_filter(
-            user=user,
             session=session,
             limit=page_size,
             offset=page_number,

@@ -78,13 +78,13 @@ class TaskRepository(BaseRepo):
 
 
     async def get_by_id(
-        self, user, session: AsyncSession, id: int, without_deleted=True
+        self, session: AsyncSession, id: int, without_deleted=True
     ) -> SchemaType:
-        return await self.get_by_id_without_activity(user=user, session=session, id=id, without_deleted=without_deleted)
+        return await self.get_by_id_without_activity(session=session, id=id, without_deleted=without_deleted)
 
 
     async def get_by_id_without_activity(
-        self, user, session: AsyncSession, id: int, without_deleted=False
+        self, session: AsyncSession, id: int, without_deleted=False
     ) -> SchemaType:
         """
         :param session: sqlalchemy session abstraction
@@ -109,7 +109,6 @@ class TaskRepository(BaseRepo):
 
     async def get_count_unreaded_task(
         self,
-        user,
         session: AsyncSession,
     ):
         query_count = session.execute(
@@ -117,7 +116,7 @@ class TaskRepository(BaseRepo):
             # .where(Task.state != TaskStateEnum.DRAFT)
             # .where(Task.state != TaskStateEnum.COMPLETED)
             # .where(Task.state != TaskStateEnum.TERMINATED)
-            .where(TaskAndAssigner.employee_id == user.id)
+            .where(TaskAndAssigner.employee_id == 1)
             .join(TaskAndAssigner, TaskAndAssigner.task_id == Task.id)
             .where(TaskAndAssigner.is_read == False)
             .where(

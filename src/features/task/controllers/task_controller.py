@@ -3,8 +3,6 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Path, Query
 
 from src.base.base_schemas import BasePaginationSchema
-from src.db.manager import current_user
-from src.features.employee.entities.employee_entity import Employee
 from src.features.task.schemas.task_schema import TaskSchema
 from src.features.task.schemas.task_schema_create_assigner import TaskSchemaCreateAssigner
 from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilterExtended
@@ -19,7 +17,6 @@ router = APIRouter(prefix="/api/task", tags=["task"])
 @router.get("/check_deadline/")
 async def check_deadline(
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ):
     return await service.check_deadline()
 
@@ -27,20 +24,17 @@ async def check_deadline(
 @router.post("/", response_model=TaskSchema)
 async def create(
     create_schema: TaskSchemaCreateAssigner,
-    # create_schema: TaskSchemaCreate,
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> TaskSchema:
-    return await service.create(user=user, schema_create=create_schema)
+    return await service.create(schema_create=create_schema)
 
 
 @router.get("/{id}", response_model=TaskSchema)
 async def get_by_id(
     id: int = Path(example=10, description="ID искомой задачи"),
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> TaskSchema:
-    return await service.get_by_id(user=user, id=id)
+    return await service.get_by_id(id=id)
 
 
 @router.patch("/{id}")
@@ -48,18 +42,16 @@ async def update(
     update_schema: TaskSchemaUpdateAssigner,
     id: int = Path(example=10, description="ID задачи которая будет обновлена"),
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> TaskSchema:
-    return await service.update(user=user, id=id, schema_update=update_schema)
+    return await service.update(id=id, schema_update=update_schema)
 
 
 @router.delete("/")
 async def delete_list(
     ids: List[int] = Query(default=None, example=[1, 2, 3], description="IDs"),
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> List[int]:
-    await service.soft_delete_all(user=user, ids=ids)
+    await service.soft_delete_all(ids=ids)
     return ids
 
 #
@@ -79,9 +71,8 @@ async def delete(
         example=10, description="ID задачи которая будет помечена как удаленная"
     ),
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> TaskSchema:
-    return await service.soft_delete(user=user, id=id)
+    return await service.soft_delete(id=id)
 
 #
 # @router.patch("/{task_id}/assigner")
@@ -118,10 +109,8 @@ async def get(
     limit: int = Query(10, example=10, description="Размер страницы"),
     page: int = Query(1, example=1, description="Номер страницы"),
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> BasePaginationSchema[TaskSchemaMinimal]:
     return await service.get_filtered_data(
-        user=user,
         filter_schema=TaskSchemaFilterExtended(
             name=name,
             assigner_id=assigner_id,
@@ -137,9 +126,8 @@ async def get(
 @router.get("/assignedToMe/unreaded/")
 async def get_count_unreaded_task(
     service=Depends(TaskService),
-    user: Employee = Depends(current_user)
 ) -> int:
-    return await service.get_count_unreaded_task(user=user)
+    return await service.get_count_unreaded_task(user=1)
 
 
 # @router.post("/startTask/")

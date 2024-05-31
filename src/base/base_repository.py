@@ -100,15 +100,13 @@ class BaseRepo(
 
     async def create(
         self,
-        user,
         session: AsyncSession,
         schema_create: CreateSchemaType,
     ) -> SchemaType:
-        return await self.create_system(user=user, session=session, schema_create=schema_create)
+        return await self.create_system(session=session, schema_create=schema_create)
 
     async def create_system(
         self,
-        user,
         session: AsyncSession,
         schema_create: CreateSchemaType,
     ) -> SchemaType:
@@ -119,8 +117,8 @@ class BaseRepo(
         :return: Новая запись
         """
         new_entity = self.model(**schema_create.dict())
-        new_entity.writer_id = user.id
-        new_entity.create_id = user.id
+        new_entity.writer_id = 1
+        new_entity.create_id = 1
 
         session.add(new_entity)
         new_entity.create_date = datetime.datetime.now()
@@ -128,7 +126,7 @@ class BaseRepo(
         return self.schema(**new_entity.__dict__)
 
     async def get_by_id_without_activity(
-        self, user, session: AsyncSession, id: int, without_deleted=True
+        self, session: AsyncSession, id: int, without_deleted=True
     ) -> SchemaType:
         """
         :param session: sqlalchemy session abstraction
@@ -153,10 +151,10 @@ class BaseRepo(
         return self.schema.from_orm(res)
 
     async def get_by_id(
-        self, user, session: AsyncSession, id: int, without_deleted=True
+        self, session: AsyncSession, id: int, without_deleted=True
     ) -> SchemaType:
         return await self.get_by_id_without_activity(
-            user=user, session=session, id=id, without_deleted=without_deleted
+            session=session, id=id, without_deleted=without_deleted
         )
 
     async def get_entity_by_id(
@@ -172,7 +170,7 @@ class BaseRepo(
         return res
 
     async def update(
-        self, user, session: AsyncSession, id: int, schema_update: update_schema
+        self, session: AsyncSession, id: int, schema_update: update_schema
     ) -> SchemaType:
         """
         Обновление
@@ -186,9 +184,9 @@ class BaseRepo(
             .where(self.model.id == id)
             .values(schema_update.dict(exclude_unset=True))
         )
-        return await self.get_by_id_without_activity(user=user, session=session, id=id)
+        return await self.get_by_id_without_activity(session=session, id=id)
 
-    async def soft_delete(self, user, session: AsyncSession, id: int) -> SchemaType:
+    async def soft_delete(self, session: AsyncSession, id: int) -> SchemaType:
         """
         Мягкое удаление
         :param session:sqlalchemy session abstraction
@@ -197,23 +195,23 @@ class BaseRepo(
         :return:
         """
 
-        result = await self.get_by_id_without_activity(user=user, session=session, id=id, without_deleted=True)
+        result = await self.get_by_id_without_activity(session=session, id=id, without_deleted=True)
         await session.execute(
             update(self.model)
             .where(self.model.id == id)
             .values(
                 {
                     "is_deleted": True,
-                    "deleter_id": user.id,
+                    "deleter_id": 1,
                     "delete_date": datetime.datetime.now(),
-                    "writer_id": user.id,
+                    "writer_id": 1,
                 }
             )
         )
 
         return result
 
-    async def soft_delete_all(self, user, session: AsyncSession, ids: List[int]) -> bool:
+    async def soft_delete_all(self, session: AsyncSession, ids: List[int]) -> bool:
         """
         Мягкое удаление
         :param session:sqlalchemy session abstraction
@@ -228,9 +226,9 @@ class BaseRepo(
             .values(
                 {
                     "is_deleted": True,
-                    "deleter_id": user.id,
+                    "deleter_id": 1,
                     "delete_date": datetime.datetime.now(),
-                    "writer_id": user.id,
+                    "writer_id": 1,
                 }
             )
         )
@@ -296,7 +294,7 @@ class BaseRepo(
 
     async def get_with_filter(
         self,
-        user,
+
         session: AsyncSession,
         limit: int,
         offset: int,

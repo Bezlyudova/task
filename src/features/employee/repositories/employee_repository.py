@@ -1,6 +1,11 @@
+from itertools import chain
 from typing import Type
 
+from sqlalchemy import select
+
+from src.base.base_exception import BaseExceptionCustom
 from src.base.base_repository import BaseRepo, ModelType, SchemaType, CreateSchemaType
+from src.base.base_service import AsyncSession
 from src.features.employee.entities.employee_entity import Employee
 from src.features.employee.schemas.employee_schema import EmployeeSchema
 from src.features.employee.schemas.employee_schema_create import EmployeeSchemaCreate
@@ -43,3 +48,18 @@ class EmployeeRepository(BaseRepo):
     #             with_loader_criteria(Position, Position.is_deleted != True),
     #         ),
     #     ]
+
+
+    async def login(
+        self, session: AsyncSession, login: str
+    ) -> EmployeeSchema:
+        req = select(Employee).options(*chain(*self.common_options)).where(Employee.email==login)
+        res = (await session.execute(req)).scalar()
+        if res is None:
+            raise BaseExceptionCustom(
+                status_code=404,
+                reason=f"{self.model.__name__ } with current ID: < {id} > was not found",
+                message=f"Объект не найден",
+            )
+        result = self.schema.from_orm(res)
+        return result
