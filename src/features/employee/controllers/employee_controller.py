@@ -43,7 +43,7 @@ async def logout(
 ):
     return "До скорых встреч!"
 
-   
+
 @router.post("/")
 async def create(
         schema_create: EmployeeSchemaCreate,
