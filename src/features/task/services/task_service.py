@@ -209,28 +209,11 @@ class TaskService(BaseService):
 
         new_schema_update = TaskSchemaUpdate(**schema_update.__dict__)
         new_schema_update.state = task.state
-        new_schema_update.is_completed = task.is_completed
+        # new_schema_update.is_completed = task.is_completed
 
         return await self.repository.update(
             session=session, id=id, schema_update=new_schema_update
         )
-
-    # @transactional
-    # async def hide_all(
-    #     self,
-    #     task_hide_schema: TaskSchemaHide,
-    #     *,
-    #     session: Optional[AsyncSession] = None,
-    # ) -> bool:
-    #     """
-    #     скрытие/открытие задач у пользователя (≠ удаление)
-    #     :param ids: ids записей, которые будут скрыты для пользователя,
-    #     :session: Если существует внешняя сессия
-    #     :return:
-    #     """
-    #     return await self.task_and_assigner_service.hide_all(
-    #         task_hide_schema=task_hide_schema, session=session
-    #     )
 
     @transactional
     async def add_assigners(
@@ -336,26 +319,14 @@ class TaskService(BaseService):
             task_id=task_id, session=session
         )
         return result
-    #
-    # async def stop_task(self, task_id: int):
-    #     async with self.async_session.begin() as session:
-    #         return await self.repository.stop_task(session, task_id)
-    #
+
     @transactional
     async def complete_task_for_all(self, task_id: int, session: AsyncSession):
-        # await self.task_and_assigner_service.complete_task_and_assigners(
-        #     session=session,
-        #     task_id=task_id,
-        #     update_schema=TaskAndAssignerDumpSchemaUpdate(is_completed=True),
-        # )
         return await self.repository.complete_task(session=session, task_id=task_id)
-
 
     @transactional
     async def check_deadline(self, session: AsyncSession):
-        print("--------сработал")
         await self.repository.check_expired(session=session)
-        # await self.repository.check_not_expired(session=session)
 
     async def get_all_task_by_ids(
         self, ids: List[int], session: AsyncSession
