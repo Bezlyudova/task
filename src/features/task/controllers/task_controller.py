@@ -9,6 +9,7 @@ from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilt
 from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
 from src.features.task.services.task_service import TaskService
+from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
 from src.task_state_enum import TaskStateEnum
 
 router = APIRouter(prefix="/api/task", tags=["task"])
@@ -54,16 +55,6 @@ async def delete_list(
     await service.soft_delete_all(ids=ids)
     return ids
 
-#
-# @router.patch("/hide/")
-# async def hide_list(
-#     task_hide_schema: TaskSchemaHide,
-#     account: Account = Depends(get_account()),
-#     service=Depends(TaskService),
-# ) -> List[int]:
-#     await service.hide_all(task_hide_schema=task_hide_schema)
-#     return task_hide_schema.task_ids
-#
 
 @router.delete("/{id}")
 async def delete(
@@ -73,16 +64,6 @@ async def delete(
     service=Depends(TaskService),
 ) -> TaskSchema:
     return await service.soft_delete(id=id)
-
-#
-# @router.patch("/{task_id}/assigner")
-# async def set_assigner_task_status(
-#     update_schema: TaskAndAssignerDumpSchemaUpdate,
-#     task_id: int = Path(example=10, description="ID задачи"),
-#     account: Account = Depends(get_account()),
-#     service=Depends(TaskService),
-# ) -> TaskAndAssignerSchema:
-#     return await service.set_assigner_task_status(task_id, update_schema)
 
 
 @router.get("/")
@@ -127,60 +108,31 @@ async def get(
 async def get_count_unreaded_task(
     service=Depends(TaskService),
 ) -> int:
-    return await service.get_count_unreaded_task(user=1)
+    return await service.get_count_unreaded_task()
 
 
-# @router.post("/startTask/")
-# async def start_task(
-#     task_id: int = Query(1, example=1, description="ID стартуемой таски"),
-#     new_dead_line: Optional[datetime.datetime] = Query(
-#         None,
-#         example=datetime.datetime.now(),
-#         description="[НЕОБЯЗАТЕЛЬНОЕ ПОЛЕ]Время нового дедлайна, если вдруг надо сдвинуть.",
-#     ),
-#     account: Account = Depends(get_account()),
-#     service=Depends(TaskService),
-# ):
-#     return await service.start_task(task_id, new_dead_line)
-#
-#
-# @router.post("/stopTask/")
-# async def stop_task(
-#     task_id: int = Query(1, example=1, description="ID стопуемой таски"),
-#     account: Account = Depends(get_account()),
-#     service=Depends(TaskService),
-# ):
-#     return await service.stop_task(task_id)
-#
-#
-# @router.patch("/completeTask/")
-# async def complete_task(
-#     task_id: int = Query(
-#         1, example=1, description="ID завершаемой (помечаем как ВЫПОЛНЕННАЯ) таски"
-#     ),
-#     account: Account = Depends(get_account()),
-#     service=Depends(TaskService),
-# ):
-#     return await service.complete_task_for_all(task_id)
-#
-#
-# @router.get("/typeOfTasks/")
-# async def get_all_types_of_tasks(
-#     account: Account = Depends(get_account()),
-# ):
-#     return [e.value for e in TaskType]
-#
-#
-# @router.get("/statesOfTasks/")
-# async def get_all_states_of_tasks(
-#     account: Account = Depends(get_account()),
-# ):
-#     return [e.value for e in TaskStateEnum]
-#
-#
-# @router.get("/allTypesOfEntity/")
-# async def get_all_entity_type(
-#     account: Account = Depends(get_account()),
-# ):
-#     return [e.value for e in TypeOfEntity]
-#
+@router.patch("/{task_id}/assigner")
+async def set_assigner_task_status(
+    update_schema: TaskAndAssignerDumpSchemaUpdate,
+    task_id: int = Path(example=10, description="ID задачи"),
+    service=Depends(TaskService),
+) -> TaskSchema:
+    return await service.set_assigner_task_status(task_id, update_schema)
+
+
+@router.post("/startTask/")
+async def start_task(
+    task_id: int = Query(1, example=1, description="ID стартуемой таски"),
+    service=Depends(TaskService),
+):
+    return await service.start_task(task_id)
+
+
+@router.patch("/completeTask/")
+async def complete_task(
+    task_id: int = Query(
+        1, example=1, description="ID завершаемой (помечаем как ВЫПОЛНЕННАЯ) таски"
+    ),
+    service=Depends(TaskService),
+):
+    return await service.complete_task_for_all(task_id)

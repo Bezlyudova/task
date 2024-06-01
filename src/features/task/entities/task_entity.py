@@ -15,9 +15,6 @@ class Task(BaseEntity):
         nullable=False,
     )
     description: Mapped[str] = mapped_column(String(1000), nullable=True)
-    # warning_note: Mapped[str] = mapped_column(String, nullable=True)
-
-    # is_priority: Mapped[bool] = mapped_column(default=False)
 
     dead_line_date: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), index=True
@@ -31,13 +28,8 @@ class Task(BaseEntity):
     state: Mapped[TaskStateEnum] = mapped_column(
         Enum(TaskStateEnum), server_default=TaskStateEnum.DRAFT.name
     )
-    # started_by: Mapped[int] = mapped_column(ForeignKey("employer.id"), nullable=True)
-    # start_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)
-
-    is_canceled: Mapped[bool] = mapped_column(default=False)
-    canceled_by_id: Mapped[int] = mapped_column(
-        ForeignKey("employee.id"), nullable=True
-    )
+    started_by: Mapped[int] = mapped_column(ForeignKey("employee.id"), nullable=True)
+    start_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     is_completed: Mapped[bool] = mapped_column(default=False)
     completed_date: Mapped[DateTime] = mapped_column(
@@ -45,5 +37,4 @@ class Task(BaseEntity):
     )
 
     assigners = relationship("TaskAndAssigner")
-    # comments = relationship("TaskComment", primaryjoin="Task.id == TaskComment.main_task_id")
     entity_type: TypeOfEntity = TypeOfEntity.TASK

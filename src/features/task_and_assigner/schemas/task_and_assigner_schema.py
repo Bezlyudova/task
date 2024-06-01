@@ -27,7 +27,5 @@ class TaskAndAssignerSchema(BaseSchema):
     is_expired: Optional[bool]
     # expired_date: Optional[datetime]
     #
-    is_hidden: Optional[bool]
-    # hidden_date: Optional[datetime]
     #
     # color_marker: Optional[str]

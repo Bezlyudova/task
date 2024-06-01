@@ -15,7 +15,7 @@ class Employee(SQLAlchemyBaseUserTable[int], BaseEntity):
     name: Mapped[str] = mapped_column(String(500), index=True, nullable=True)
     last_name: Mapped[str] = mapped_column(String(100), index=True, nullable=True)
     middle_name: Mapped[str] = mapped_column(String(100), nullable=True, index=True)
-    email: Mapped[str] = mapped_column(String(100), nullable=True)
+    email: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
 
     organisation_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("organisation.id"), nullable=True

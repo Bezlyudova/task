@@ -16,6 +16,8 @@ from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update import TaskSchemaUpdate
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
 from src.features.task.schemas.type_of_assigner_schema import TypeOfAssignerSchema
+from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
+from src.features.task_and_assigner.schemas.task_and_assigner_schema import TaskAndAssignerSchema
 from src.features.task_and_assigner.schemas.task_and_assigner_schema_create import TaskAndAssignerSchemaCreate
 from src.features.task_and_assigner.services.task_and_assigner_service import TaskAndAssignerService
 from src.task_state_enum import TaskStateEnum
@@ -299,132 +301,61 @@ class TaskService(BaseService):
         async with self.async_session.begin() as session:
             return await self.repository.get_count_unreaded_task(session=session)
 
-    # @transactional
-    # async def set_assigner_task_status(
-    #     self,
-    #     task_id: int,
-    #     update_schema: TaskAndAssignerDumpSchemaUpdate,
-    #     session: AsyncSession,
-    # ) -> TaskAndAssignerSchema:
-    #     result = await self.task_and_assigner_service.set_assigner_task_status(
-    #         task_id=task_id, update_schema=update_schema, session=session
-    #     )
-    #     task = await self.get_by_id_without_activity(id=task_id, session=session)
-    #     list_completed = await self.task_and_assigner_service.get_completed(
-    #         session=session, task_id=task_id
-    #     )
-    #
-    #     if (
-    #         not (False in list_completed)
-    #         and list_completed
-    #         and task.state == TaskStateEnum.WORKS.value
-    #     ):
-    #         if (
-    #             await self.get_by_id_without_activity(id=task_id, session=session)
-    #         ).task_type == TaskType.AGREEMENT.name:
-    #             logger.debug(f"Task with id {task_id} is agreement!")
-    #             await self.agreement_doc_service.check_doc_status_by_task_id(
-    #                 task_id=task_id, session=session
-    #             )
-    #         await self.complete_task_with_status(
-    #             task_id=task_id, status=TaskStateEnum.COMPLETED, session=session
-    #         )
-    #
-    #     if update_schema.is_completed is True:
-    #         await self.task_comment_service.create(TaskCommentSchemaCreate(
-    #             main_task_id=task_id,
-    #             note="Выполнена" +
-    #                  (f" с комментарием \"{update_schema.note}\"." if update_schema.note else "."),
-    #             employee_id=self.req.user.id,
-    #         ), session=session)
-    #
-    #     return result
+    @transactional
+    async def set_assigner_task_status(
+        self,
+        task_id: int,
+        update_schema: TaskAndAssignerDumpSchemaUpdate,
+        session: AsyncSession,
+    ) -> TaskSchema:
+        await self.task_and_assigner_service.set_assigner_task_status(
+            task_id=task_id, update_schema=update_schema, session=session
+        )
+        task = await self.get_by_id_without_activity(id=task_id, session=session)
+        list_completed = await self.task_and_assigner_service.get_completed(
+            session=session, task_id=task_id
+        )
+        if (
+            not (False in list_completed)
+            and list_completed
+            and task.state == TaskStateEnum.WORKS.value
+        ):
+            await self.repository.complete_task(
+                task_id=task_id, session=session
+            )
+        return await self.get_by_id_without_activity(id=task_id, session=session)
 
-    # @transactional
-    # async def start_task(
-    #     self,
-    #     task_id: int,
-    #     new_dead_line: DateTime = None,
-    #     session: Optional[AsyncSession] = None,
-    # ):
-    #     task = await self.get_by_id_without_activity(id=task_id, session=session)
-    #
-    #     # Get assigners and add permissions
-    #     assigners = []
-    #     observers = []
-    #     for assigner in task.assigners:
-    #         if assigner.type_of_assigner == TypeOfAssigner.ASSIGNER.value:
-    #             assigners.append(assigner.employee_id)
-    #         if assigner.type_of_assigner == TypeOfAssigner.OBSERVER.value:
-    #             observers.append(assigner.employee_id)
-    #
-    #     await self.add_permissions_for_assigners(
-    #         task=task,
-    #         session=session,
-    #         type_of_assigner=TypeOfAssigner.ASSIGNER,
-    #         employee_ids=assigners,
-    #     )
-    #
-    #     await self.add_permissions_for_assigners(
-    #         task=task,
-    #         session=session,
-    #         type_of_assigner=TypeOfAssigner.OBSERVER,
-    #         employee_ids=observers,
-    #     )
-    #     #
-    #     result = await self.repository.start_task(
-    #         task_id=task_id, new_dead_line=new_dead_line, session=session
-    #     )
-    #
-    #     await self.notification_service.notify(
-    #         to_employees_guids=[],
-    #         employees_ids=[assigner.employee_id for assigner in task.assigners],
-    #         message=f"Вы участвуете в задаче {task.name}",
-    #         from_entity_type=TypeOfEntity.TASK,
-    #         from_entity_id=task.id,
-    #         task_type=task.task_type,
-    #     )
-    #
-    #     await self.task_comment_service.create(TaskCommentSchemaCreate(
-    #         main_task_id=task_id,
-    #         note="Отправлена. ",
-    #         employee_id=self.req.user.id,
-    #     ), session=session)
-    #
-    #     return result
+
+    @transactional
+    async def start_task(
+        self,
+        task_id: int,
+        session: Optional[AsyncSession] = None,
+    ):
+        result = await self.repository.start_task(
+            task_id=task_id, session=session
+        )
+        return result
     #
     # async def stop_task(self, task_id: int):
     #     async with self.async_session.begin() as session:
     #         return await self.repository.stop_task(session, task_id)
     #
-    # @transactional
-    # async def complete_task_for_all(self, task_id: int, session: AsyncSession):
-    #     await self.task_and_assigner_service.complete_task_and_assigners(
-    #         session=session,
-    #         task_id=task_id,
-    #         update_schema=TaskAndAssignerDumpSchemaUpdate(is_completed=True),
-    #     )
-    #     await self.task_comment_service.create(TaskCommentSchemaCreate(
-    #         main_task_id=task_id,
-    #         note="Выполнена для всех. ",
-    #         employee_id=self.req.user.id,
-    #     ), session=session)
-    #     task = await self.get_by_id_without_activity(id=task_id, session=session)
-    #     if task.parent_id is not None:
-    #         await self.task_comment_service.create(TaskCommentSchemaCreate(
-    #             main_task_id=task.parent_id,
-    #             task_id=task.id,
-    #             note=f"Выполнена подзадача с темой \"{task.name}\".",
-    #             employee_id=self.req.user.id,
-    #         ), session=session)
-    #
-    #     return await self.repository.complete_task(session=session, task_id=task_id)
+    @transactional
+    async def complete_task_for_all(self, task_id: int, session: AsyncSession):
+        # await self.task_and_assigner_service.complete_task_and_assigners(
+        #     session=session,
+        #     task_id=task_id,
+        #     update_schema=TaskAndAssignerDumpSchemaUpdate(is_completed=True),
+        # )
+        return await self.repository.complete_task(session=session, task_id=task_id)
 
 
-    # @transactional
-    # async def check_deadline(self, session: AsyncSession):
-    #     await self.repository.check_expired(session=session)
-    #     await self.repository.check_not_expired(session=session)
+    @transactional
+    async def check_deadline(self, session: AsyncSession):
+        print("--------сработал")
+        await self.repository.check_expired(session=session)
+        # await self.repository.check_not_expired(session=session)
 
     async def get_all_task_by_ids(
         self, ids: List[int], session: AsyncSession

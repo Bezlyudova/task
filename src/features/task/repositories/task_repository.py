@@ -1,7 +1,8 @@
+import datetime
 from itertools import chain
 from typing import Type, List
 
-from sqlalchemy import select, func, distinct, or_, and_
+from sqlalchemy import select, func, distinct, or_, and_, update
 from sqlalchemy.orm import joinedload
 
 from src.base.base_exception import BaseExceptionCustom
@@ -16,6 +17,7 @@ from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilt
 from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update import TaskSchemaUpdate
 from src.features.task_and_assigner.entities import TaskAndAssigner
+from src.task_state_enum import TaskStateEnum
 from src.type_of_assigner import TypeOfAssigner
 
 
@@ -113,9 +115,8 @@ class TaskRepository(BaseRepo):
     ):
         query_count = session.execute(
             select((func.count(distinct(Task.id))))
-            # .where(Task.state != TaskStateEnum.DRAFT)
-            # .where(Task.state != TaskStateEnum.COMPLETED)
-            # .where(Task.state != TaskStateEnum.TERMINATED)
+            .where(Task.state != TaskStateEnum.DRAFT)
+            .where(Task.state != TaskStateEnum.COMPLETED)
             .where(TaskAndAssigner.employee_id == 1)
             .join(TaskAndAssigner, TaskAndAssigner.task_id == Task.id)
             .where(TaskAndAssigner.is_read == False)
@@ -128,102 +129,49 @@ class TaskRepository(BaseRepo):
         )
         return (await query_count).scalar()
 
-    # async def get_by_id(
-    #     self, session: AsyncSession, id: int, without_deleted=True
-    # ) -> SchemaType:
-    #     await check_permissions(
-    #         session, self.request.user.id, TypeOfEntity.TASK, id, ActivityType.READ
-    #     )
-    #     return await self.get_by_id_without_activity(session, id, without_deleted)
+    async def start_task(
+        self, session: AsyncSession, task_id: int
+    ):
+        task: TaskSchema = await self.get_by_id_without_activity(session=session, id=task_id)
+        if (
+            task.state != TaskStateEnum.DRAFT.name
+        ):
+            raise BaseExceptionCustom(
+                status_code=400,
+                reason=f"Cant complete task with state [<{task.state}>]. Only [DRAFT/STOPPED/IN_ACCEPTANCE] state available.",
+                message="Задача не может быть отправлена, т.к. имеет статус отличный от 'Черновик', 'Остановлена', 'На приемке'",
+            )
+        await session.execute(
+            update(self.model)
+            .where(self.model.id == task.id)
+            .values(
+                state=TaskStateEnum.WORKS.name,
+                start_date=datetime.datetime.now(),
+            )
+        )
+        await session.flush()
+        return task
 
-    # async def get_count_assigned(
-    #     self, session: AsyncSession, type_of_assigner: str
-    # ) -> int:
-    #     res = (
-    #         await session.execute(
-    #             text(
-    #                 f"select count(*) from task INNER JOIN task_and_assigner ON task_and_assigner.task_id = task.id "
-    #                 f"WHERE task_and_assigner.employee_id = {self.request.user.id}"
-    #                 f" and task_and_assigner.type_of_assigner = '{type_of_assigner}'"
-    #                 f"and task.state != 'DRAFT'"
-    #                 f"and task.state != 'COMPLETED'"
-    #                 f"and task.state != 'TERMINATED'"
-    #             )
-    #         )
-    #     ).scalar()
-    # 
-    #     return res or 0
-    # 
-    # @activity_log(ActivityType.UPDATE)
-    # async def start_task(
-    #     self, session: AsyncSession, task_id: int, new_dead_line: DateTime
-    # ):
-    #     task: TaskSchema = await self.get_by_id_without_activity(session, task_id)
-    #     if (
-    #         task.state != TaskStateEnum.DRAFT.name
-    #         and task.state != TaskStateEnum.STOPPED.name
-    #         and task.state != TaskStateEnum.IN_ACCEPTANCE.name
-    #     ):
-    #         raise TaskStateException(
-    #             status_code=400,
-    #             reason=f"Cant complete task with state [<{task.state}>]. Only [DRAFT/STOPPED/IN_ACCEPTANCE] state available.",
-    #             message="Задача не может быть отправлена, т.к. имеет статус отличный от 'Черновик', 'Остановлена', 'На приемке'",
-    #         )
-    #     await session.execute(
-    #         update(self.model)
-    #         .where(self.model.id == task_id)
-    #         .values(
-    #             state=TaskStateEnum.WORKS.name,
-    #             start_date=datetime.datetime.now(),
-    #             new_dead_line_date=new_dead_line if new_dead_line else None,
-    #         )
-    #     )
-    #     await session.flush()
-    #     return task
-    # 
-    # @activity_log(ActivityType.UPDATE)
-    # async def stop_task(self, session: AsyncSession, task_id: int):
-    #     task: TaskSchema = await self.get_by_id_without_activity(session, task_id)
-    #     if task.state != TaskStateEnum.WORKS.name:
-    #         raise TaskStateException(
-    #             status_code=400,
-    #             reason=f"Cant complete task with state [<{task.state}>]. Only [WORKS] state available.",
-    #             message="Задача не может быть остановлена, т.к. имеет статус отличный от 'В работе'",
-    #         )
-    #     await session.execute(
-    #         update(self.model)
-    #         .where(self.model.id == task_id)
-    #         .values(
-    #             state=TaskStateEnum.STOPPED,
-    #             canceled_by_id=self.request.user.id,
-    #             is_canceled=True,
-    #         )
-    #     )
-    #     await session.flush()
-    # 
-    #     return task
-    # 
-    # @activity_log(ActivityType.UPDATE)
-    # async def complete_task(self, session: AsyncSession, task_id: int):
-    #     task: TaskSchema = await self.get_by_id_without_activity(session, task_id)
-    #     if task.state != TaskStateEnum.WORKS.name:
-    #         raise TaskStateException(
-    #             status_code=400,
-    #             reason=f"Cant complete task with state [<{task.state}>]. Only [WORKS] state available.",
-    #             message="Задача не может быть завершена, т.к. имеет статус отличный от 'В работе'",
-    #         )
-    #     await session.execute(
-    #         update(self.model)
-    #         .where(self.model.id == task_id)
-    #         .values(
-    #             state=TaskStateEnum.COMPLETED,
-    #             completed_date=datetime.datetime.now(),
-    #             is_completed=True,
-    #         )
-    #     )
-    #     await session.flush()
-    # 
-    #     return task
+    async def complete_task(self, session: AsyncSession, task_id: int):
+        task: TaskSchema = await self.get_by_id_without_activity(session, task_id)
+        if task.state != TaskStateEnum.WORKS.name:
+            raise BaseExceptionCustom(
+                status_code=400,
+                reason=f"Cant complete task with state [<{task.state}>]. Only [WORKS] state available.",
+                message="Задача не может быть завершена, т.к. имеет статус отличный от 'В работе'",
+            )
+        await session.execute(
+            update(self.model)
+            .where(self.model.id == task_id)
+            .values(
+                state=TaskStateEnum.COMPLETED,
+                completed_date=datetime.datetime.now(),
+                is_completed=True,
+            )
+        )
+        await session.flush()
+
+        return task
 
     async def get_with_filter(
         self,
@@ -318,70 +266,21 @@ class TaskRepository(BaseRepo):
         )
         return self.transform_many_minimal(data.scalars().unique())
     #
-    # async def check_expired(self, session: AsyncSession):
-    #     await session.execute(
-    #         update(TaskAndAssigner)
-    #         .where(
-    #             TaskAndAssigner.task_id.in_(
-    #                 select(Task.id).where(
-    #                     or_(
-    #                         and_(
-    #                             Task.new_dead_line_date != None,
-    #                             (
-    #                                 Task.new_dead_line_date
-    #                                 < datetime.datetime.now().astimezone()
-    #                             ),
-    #                         ),
-    #                         and_(
-    #                             Task.new_dead_line_date == None,
-    #                             (
-    #                                 Task.first_dead_line_date
-    #                                 < datetime.datetime.now().astimezone()
-    #                             ),
-    #                         ),
-    #                     ),
-    #                     TaskAndAssigner.is_expired != True,
-    #                     Task.is_deleted != True,
-    #                     Task.is_completed != True,
-    #                     Task.is_canceled != True,
-    #                     TaskAndAssigner.is_deleted != True,
-    #                     TaskAndAssigner.is_completed != True,
-    #                 )
-    #             ),
-    #         )
-    #         .values(is_expired=True, expired_date=datetime.datetime.now())
-    #     )
-
-    # async def check_not_expired(self, session: AsyncSession):
-    #     await session.execute(
-    #         update(TaskAndAssigner)
-    #         .where(
-    #             TaskAndAssigner.task_id.in_(
-    #                 select(Task.id).where(
-    #                     or_(
-    #                         and_(
-    #                             Task.new_dead_line_date != None,
-    #                             (
-    #                                 Task.new_dead_line_date
-    #                                 > datetime.datetime.now().astimezone()
-    #                             ),
-    #                         ),
-    #                         and_(
-    #                             Task.new_dead_line_date == None,
-    #                             (
-    #                                 Task.first_dead_line_date
-    #                                 > datetime.datetime.now().astimezone()
-    #                             ),
-    #                         ),
-    #                     ),
-    #                     TaskAndAssigner.is_expired != False,
-    #                     Task.is_deleted != True,
-    #                     Task.is_completed != True,
-    #                     Task.is_canceled != True,
-    #                     TaskAndAssigner.is_deleted != True,
-    #                     TaskAndAssigner.is_completed != True,
-    #                 )
-    #             )
-    #         )
-    #         .values(is_expired=False)
-    #     )
+    async def check_expired(self, session: AsyncSession):
+        await session.execute(
+            update(TaskAndAssigner)
+            .where(
+                TaskAndAssigner.task_id.in_(
+                    select(Task.id).where(
+                                    Task.dead_line_date
+                                    < datetime.datetime.now().astimezone(),
+                        TaskAndAssigner.is_expired != True,
+                        Task.is_deleted != True,
+                        Task.is_completed != True,
+                        TaskAndAssigner.is_deleted != True,
+                        TaskAndAssigner.is_completed != True,
+                    )
+                ),
+            )
+            .values(is_expired=True, expired_date=datetime.datetime.now())
+        )

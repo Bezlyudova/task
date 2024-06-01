@@ -12,13 +12,15 @@ from src.features.employee.services.employee_service import EmployeeService
 
 router = APIRouter(prefix="/api/employee", tags=["employee"])
 
+
 @router.get("/me/")
 async def get_account(
     service=Depends(EmployeeService),
 ):
     return await service.get_by_id_without_activity(id=1)
 
-@router.get("/login/")
+
+@router.post("/login/")
 async def login(
     service=Depends(EmployeeService),
     login: Optional[str] = Query(
@@ -34,12 +36,14 @@ async def login(
 ) -> EmployeeSchema:
     return await service.login(login=login)
 
+
 @router.get("/logout/")
 async def logout(
     service=Depends(EmployeeService),
 ):
     return "До скорых встреч!"
 
+   
 @router.post("/")
 async def create(
         schema_create: EmployeeSchemaCreate,

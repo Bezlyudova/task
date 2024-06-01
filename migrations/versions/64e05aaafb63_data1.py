@@ -1,8 +1,8 @@
 """data1
 
-Revision ID: 911ee655ac26
+Revision ID: 64e05aaafb63
 Revises: 
-Create Date: 2024-05-21 15:55:25.500956
+Create Date: 2024-06-01 17:34:23.021288
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '911ee655ac26'
+revision: str = '64e05aaafb63'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -41,10 +41,14 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=500), nullable=True),
     sa.Column('last_name', sa.String(length=100), nullable=True),
     sa.Column('middle_name', sa.String(length=100), nullable=True),
-    sa.Column('email', sa.String(length=100), nullable=True),
+    sa.Column('email', sa.String(length=100), nullable=False),
     sa.Column('organisation_id', sa.Integer(), nullable=True),
     sa.Column('department_id', sa.Integer(), nullable=True),
     sa.Column('position_id', sa.Integer(), nullable=True),
+    sa.Column('hashed_password', sa.String(length=1024), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_superuser', sa.Boolean(), nullable=False),
+    sa.Column('is_verified', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('create_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('write_date', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -53,7 +57,8 @@ def upgrade() -> None:
     sa.Column('delete_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('deleter_id', sa.Integer(), nullable=True),
     sa.Column('is_deleted', sa.Boolean(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
     )
     op.create_index(op.f('ix_employee_id'), 'employee', ['id'], unique=False)
     op.create_index(op.f('ix_employee_last_name'), 'employee', ['last_name'], unique=False)
@@ -98,9 +103,9 @@ def upgrade() -> None:
     sa.Column('dead_line_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('is_expired', sa.Boolean(), nullable=False),
     sa.Column('expired_date', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('state', sa.Enum('DRAFT', 'WORKS', 'STOPPED', 'COMPLETED', 'TERMINATED', 'IN_ACCEPTANCE', name='taskstateenum'), server_default='DRAFT', nullable=False),
-    sa.Column('is_canceled', sa.Boolean(), nullable=False),
-    sa.Column('canceled_by_id', sa.Integer(), nullable=True),
+    sa.Column('state', sa.Enum('DRAFT', 'WORKS', 'COMPLETED', name='taskstateenum'), server_default='DRAFT', nullable=False),
+    sa.Column('started_by', sa.Integer(), nullable=True),
+    sa.Column('start_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_completed', sa.Boolean(), nullable=False),
     sa.Column('completed_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),
@@ -124,8 +129,6 @@ def upgrade() -> None:
     sa.Column('complete_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('is_expired', sa.Boolean(), nullable=False),
     sa.Column('expired_date', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('is_hidden', sa.Boolean(), nullable=False),
-    sa.Column('hidden_date', sa.DateTime(timezone=True), nullable=True),
     sa.Column('type_of_assigner', sa.Enum('ASSIGNER', 'OBSERVER', name='typeofassigner'), nullable=False),
     sa.Column('note', sa.String(length=3000), nullable=True),
     sa.Column('id', sa.Integer(), nullable=False),

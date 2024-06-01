@@ -26,18 +26,11 @@ class TaskAndAssigner(BaseEntity):
         DateTime(timezone=True), nullable=True
     )
 
-    is_hidden: Mapped[bool] = mapped_column(default=False)
-    hidden_date: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-
     type_of_assigner: Mapped[TypeOfAssigner] = mapped_column(
         Enum(TypeOfAssigner), index=True
     )
 
     note: Mapped[str] = mapped_column(String(3000), nullable=True)
-
-    # color_marker: Mapped[str] = mapped_column(String(7), nullable=True)
 
     employee = relationship("Employee", foreign_keys=[employee_id])
 

@@ -7,16 +7,13 @@ from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update
 
 
 class TaskAndAssignerSchemaUpdate(BaseModel):
-    is_read: Optional[bool]
-    read_date: Optional[datetime]
-    is_completed: Optional[bool]
-    complete_date: Optional[datetime]
-    is_expired: Optional[bool]
-    expired_date: Optional[datetime]
-    is_hidden: Optional[bool]
-    hidden_date: Optional[datetime]
-    note: Optional[str]
-    # color_marker: Optional[str]
+    is_read: bool | None
+    read_date: datetime | None
+    is_completed: bool | None
+    complete_date: datetime | None
+    is_expired: bool | None
+    expired_date: datetime | None
+    note: str | None
 
 
     @classmethod
@@ -30,6 +27,4 @@ class TaskAndAssignerSchemaUpdate(BaseModel):
             vals["complete_date"] = current_time
         if vals.get("is_expired"):
             vals["expired_date"] = current_time
-        if vals.get("is_hidden"):
-            vals["hidden_date"] = current_time
         return cls(**vals)
