@@ -1,6 +1,7 @@
 import asyncio
 
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 
 from src.base.base_exception import BaseExceptionCustom
@@ -22,6 +23,25 @@ app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
 )
+
+origins = [
+    "http://localhost:4200",  # Замените на URL-адрес вашего Angular-приложения
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+origins = [
+    "http://localhost.tiangolo.com",
+    "https://localhost.tiangolo.com",
+    "http://localhost:4200",
+    "http://localhost",
+    "http://localhost:8080",
+]
 
 app.include_router(department_controller.router)
 app.include_router(employee_controller.router)
