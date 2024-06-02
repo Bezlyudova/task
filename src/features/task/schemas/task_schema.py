@@ -22,8 +22,6 @@ class TaskSchema(BaseSchema):
     # started_by: Optional[int]
     # start_date: Optional[datetime]
 
-
-
     is_completed: bool
     # completed_date: Optional[datetime]
 

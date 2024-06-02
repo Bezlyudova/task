@@ -82,6 +82,9 @@ async def get(
     observer_id: Optional[int] = Query(
         None, example="1", description="Кто наблюдатель"
     ),
+    create_id: Optional[int] = Query(
+        None, example="1", description="Кто создатель"
+    ),
     states: List[TaskStateEnum] = Query(
         None,
         example=["WORKS", "DRAFT"],
@@ -96,6 +99,7 @@ async def get(
             name=name,
             assigner_id=assigner_id,
             observer_id=observer_id,
+            create_id=create_id,
             state=states
         ),
         without_deleted=without_deleted,

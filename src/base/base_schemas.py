@@ -1,10 +1,10 @@
-from typing import TypeVar, Generic, List, Optional
+from typing import TypeVar, Generic, List
 from pydantic import BaseModel
 from pydantic.generics import GenericModel
 
 
 class BaseSchema(BaseModel):
-    id: Optional[int]
+    id: int | None
 
     class Config:
         use_enum_values = True

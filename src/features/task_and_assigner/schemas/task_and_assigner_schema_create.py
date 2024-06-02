@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel
 from src.type_of_assigner import TypeOfAssigner
 
