@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Path, Query
@@ -90,6 +91,7 @@ async def get(
         example=["WORKS", "DRAFT"],
         description="Список приемлемых статусов",
     ),
+    dead_line_date: Optional[datetime] = Query(datetime.now()),
     limit: int = Query(10, example=10, description="Размер страницы"),
     page: int = Query(1, example=1, description="Номер страницы"),
     service=Depends(TaskService),
@@ -100,7 +102,8 @@ async def get(
             assigner_id=assigner_id,
             observer_id=observer_id,
             create_id=create_id,
-            state=states
+            state=states,
+            dead_line_date=dead_line_date,
         ),
         without_deleted=without_deleted,
         page_number=page,

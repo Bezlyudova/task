@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List
 
 from src.features.task.schemas.task_schema_filter import TaskSchemaFilter
@@ -9,4 +10,5 @@ class TaskSchemaFilterExtended(TaskSchemaFilter):
     observer_id: int | None
     create_id: int | None
     state: List[TaskStateEnum] | None
+    # dead_line_date: datetime | None
     # is_hidden: bool | None

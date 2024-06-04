@@ -4,6 +4,7 @@ from sqlalchemy.orm import joinedload, with_loader_criteria
 
 from src.base.base_repository import BaseRepo, ModelType, SchemaType, CreateSchemaType
 from src.features.department.entities.department_entity import Department
+from src.features.organisation.entities.organisation_entity import Organisation
 from src.features.position.entities.position_entity import Position
 from src.features.position.schemas.position_schema import PositionSchema
 from src.features.position.schemas.position_schema_create import PositionSchemaCreate
@@ -42,7 +43,7 @@ class PositionRepository(BaseRepo):
         return [
             *super().common_options,
             (
-                joinedload(Position.department).joinedload(Department.organisation),
+                joinedload(Position.department).joinedload(Department.organisation).joinedload(Organisation.master),
                 with_loader_criteria(Department, Department.is_deleted != True),
             ),
         ]
