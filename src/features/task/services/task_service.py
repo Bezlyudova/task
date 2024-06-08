@@ -12,6 +12,7 @@ from src.features.task.schemas.task_schema import TaskSchema
 from src.features.task.schemas.task_schema_create import TaskSchemaCreate
 from src.features.task.schemas.task_schema_create_assigner import TaskSchemaCreateAssigner
 from src.features.task.schemas.task_schema_filter import TaskSchemaFilter
+from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilterExtended
 from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update import TaskSchemaUpdate
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
@@ -42,7 +43,6 @@ class TaskService(BaseService):
     @property
     def task_and_assigner_service(self) -> TaskAndAssignerService:
         return TaskAndAssignerService(req=self.req, session=self.async_session)
-
 
     @transactional
     async def get_by_id(
@@ -95,7 +95,6 @@ class TaskService(BaseService):
             )
         )
         return schema_create
-
 
     async def _create(
         self,
@@ -263,7 +262,7 @@ class TaskService(BaseService):
     @transactional
     async def get_filtered_data(
         self,
-        filter_schema: TaskSchemaFilter,
+        filter_schema: TaskSchemaFilterExtended,
         without_deleted: bool = True,
         page_number: int = 1,
         page_size: int = 10,

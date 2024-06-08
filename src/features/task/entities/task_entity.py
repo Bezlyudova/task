@@ -1,4 +1,4 @@
-from sqlalchemy import DateTime, ForeignKey, Enum
+from sqlalchemy import DateTime, ForeignKey, Enum, Integer
 from sqlalchemy import String
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
@@ -35,6 +35,8 @@ class Task(BaseEntity):
     completed_date: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+
+    priority: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
 
     assigners = relationship("TaskAndAssigner")
     entity_type: TypeOfEntity = TypeOfEntity.TASK

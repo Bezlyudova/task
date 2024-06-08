@@ -11,4 +11,6 @@ class TaskSchemaCreate(BaseModel):
     description: str | None
     state: TaskStateEnum | None
     create_id: int | None
+    priority: int | None
+
     # warning_note: Optional[str]

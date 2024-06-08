@@ -12,3 +12,6 @@ class EmployeeSchemaCreate(schemas.BaseUserCreate, BaseModel):
     organisation_id: int | None
     department_id: int | None
     position_id: int | None
+
+    def __hash__(self):
+        return hash(str(self))

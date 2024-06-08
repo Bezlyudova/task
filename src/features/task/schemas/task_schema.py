@@ -28,3 +28,5 @@ class TaskSchema(BaseSchema):
     assigners: List[TaskAndAssignerSchema] | None = None
 
     state: TaskStateEnum
+
+    priority: int | None

@@ -13,3 +13,4 @@ class TaskSchemaMinimal(BaseSchema):
     is_completed: bool
     state: TaskStateEnum
     assigners: List[TaskAndAssignerSchemaMinimal] | None
+    priority: int | None
