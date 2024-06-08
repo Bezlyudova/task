@@ -147,10 +147,12 @@ class TaskRepository(BaseRepo):
             .values(
                 state=TaskStateEnum.WORKS.name,
                 start_date=datetime.datetime.now(),
+                started_by=1,
             )
         )
         await session.flush()
-        return task
+        task2: TaskSchema = await self.get_by_id_without_activity(session=session, id=task_id)
+        return task2
 
     async def complete_task(self, session: AsyncSession, task_id: int):
         task: TaskSchema = await self.get_by_id_without_activity(session, task_id)

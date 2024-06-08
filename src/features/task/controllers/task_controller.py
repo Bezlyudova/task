@@ -10,6 +10,7 @@ from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilt
 from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
 from src.features.task.services.task_service import TaskService
+from src.features.task_and_assigner.schemas.complete_dump_schema_update import CompleteDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
 from src.task_state_enum import TaskStateEnum
 
@@ -125,6 +126,15 @@ async def set_assigner_task_status(
     service=Depends(TaskService),
 ) -> TaskSchema:
     return await service.set_assigner_task_status(task_id, update_schema)
+
+
+@router.patch("/{task_id}/complete/assigner")
+async def complete_task_for_assigner(
+    update_schema: CompleteDumpSchemaUpdate,
+    task_id: int = Path(example=10, description="ID задачи"),
+    service=Depends(TaskService),
+) -> TaskSchema:
+    return await service.complete_task_for_assigner(task_id, update_schema)
 
 
 @router.post("/startTask/")

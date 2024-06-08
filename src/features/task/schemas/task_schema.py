@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional, List
 
 from src.base.base_schemas import BaseSchema
+from src.features.employee.schemas.employee_schema_minimal import EmployeeSchemaMinimal
 from src.features.task_and_assigner.schemas.task_and_assigner_schema import TaskAndAssignerSchema
 from src.task_state_enum import TaskStateEnum
 
@@ -19,7 +20,8 @@ class TaskSchema(BaseSchema):
     is_expired: bool
     # expired_date: Optional[datetime]
 
-    # started_by: Optional[int]
+    started_by: Optional[int]
+    started: EmployeeSchemaMinimal | None
     # start_date: Optional[datetime]
 
     is_completed: bool

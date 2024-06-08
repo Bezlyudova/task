@@ -17,6 +17,7 @@ from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update import TaskSchemaUpdate
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
 from src.features.task.schemas.type_of_assigner_schema import TypeOfAssignerSchema
+from src.features.task_and_assigner.schemas.complete_dump_schema_update import CompleteDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_schema import TaskAndAssignerSchema
 from src.features.task_and_assigner.schemas.task_and_assigner_schema_create import TaskAndAssignerSchemaCreate
@@ -293,6 +294,30 @@ class TaskService(BaseService):
         await self.task_and_assigner_service.set_assigner_task_status(
             task_id=task_id, update_schema=update_schema, session=session
         )
+        # task = await self.get_by_id_without_activity(id=task_id, session=session)
+        # list_completed = await self.task_and_assigner_service.get_completed(
+        #     session=session, task_id=task_id
+        # )
+        # if (
+        #     not (False in list_completed)
+        #     and list_completed
+        #     and task.state == TaskStateEnum.WORKS.value
+        # ):
+        #     await self.repository.complete_task(
+        #         task_id=task_id, session=session
+        #     )
+        return await self.get_by_id_without_activity(id=task_id, session=session)
+
+    @transactional
+    async def complete_task_for_assigner(
+        self,
+        task_id: int,
+        update_schema: CompleteDumpSchemaUpdate,
+        session: AsyncSession,
+    ) -> TaskSchema:
+        await self.task_and_assigner_service.complete_task_for_assigner(
+            task_id=task_id, update_schema=update_schema, session=session
+        )
         task = await self.get_by_id_without_activity(id=task_id, session=session)
         list_completed = await self.task_and_assigner_service.get_completed(
             session=session, task_id=task_id
@@ -306,7 +331,6 @@ class TaskService(BaseService):
                 task_id=task_id, session=session
             )
         return await self.get_by_id_without_activity(id=task_id, session=session)
-
 
     @transactional
     async def start_task(

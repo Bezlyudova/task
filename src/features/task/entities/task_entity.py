@@ -29,6 +29,8 @@ class Task(BaseEntity):
         Enum(TaskStateEnum), server_default=TaskStateEnum.DRAFT.name
     )
     started_by: Mapped[int] = mapped_column(ForeignKey("employee.id"), nullable=True)
+    started = relationship("Employee", foreign_keys=started_by)
+
     start_date: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)
 
     is_completed: Mapped[bool] = mapped_column(default=False)

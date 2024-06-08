@@ -1,8 +1,10 @@
+import datetime
 from typing import Optional, List
 
 from src.base.base_service import BaseService, AsyncSession
 from src.db.session import transactional
 from src.features.task_and_assigner.repository.task_and_assigner_repository import TaskAndAssignerRepository
+from src.features.task_and_assigner.schemas.complete_dump_schema_update import CompleteDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_schema import TaskAndAssignerSchema
 from src.features.task_and_assigner.schemas.task_and_assigner_schema_update import TaskAndAssignerSchemaUpdate
@@ -23,7 +25,7 @@ class TaskAndAssignerService(BaseService):
         session: Optional[AsyncSession] = None,
     ):
         task_and_assigner_ids = await self.repository.get_tas_id_by_task_id(
-            session=session, task_id=task_id, for_complete=update_schema.is_completed
+            session=session, task_id=task_id, for_complete=False
         )
         for id in task_and_assigner_ids:
             result = await self.repository.update(
@@ -31,6 +33,21 @@ class TaskAndAssignerService(BaseService):
                 id=id,
                 schema_update=TaskAndAssignerSchemaUpdate.from_dump_schema(update_schema),
             )
+        return True
+
+    @transactional
+    async def complete_task_for_assigner(
+        self,
+        task_id: int,
+        update_schema: CompleteDumpSchemaUpdate,
+        *,
+        session: Optional[AsyncSession] = None,
+    ):
+        await self.repository.complete_task_for_assigner(
+            session=session,
+            id=task_id,
+            update_schema=update_schema,
+        )
         return True
 
     @transactional
