@@ -11,7 +11,7 @@ from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
 from src.features.task.services.task_service import TaskService
 from src.features.task_and_assigner.schemas.complete_dump_schema_update import CompleteDumpSchemaUpdate
-from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
+from src.features.task_and_assigner.schemas.read_dump_schema_update import ReadDumpSchemaUpdate
 from src.task_state_enum import TaskStateEnum
 
 router = APIRouter(prefix="/api/task", tags=["task"])
@@ -119,13 +119,13 @@ async def get_count_unreaded_task(
     return await service.get_count_unreaded_task()
 
 
-@router.patch("/{task_id}/assigner")
-async def set_assigner_task_status(
-    update_schema: TaskAndAssignerDumpSchemaUpdate,
+@router.patch("/{task_id}/read/assigner")
+async def read_assigner_task_status(
+    update_schema: ReadDumpSchemaUpdate,
     task_id: int = Path(example=10, description="ID задачи"),
     service=Depends(TaskService),
 ) -> TaskSchema:
-    return await service.set_assigner_task_status(task_id, update_schema)
+    return await service.read_assigner_task_status(task_id, update_schema)
 
 
 @router.patch("/{task_id}/complete/assigner")

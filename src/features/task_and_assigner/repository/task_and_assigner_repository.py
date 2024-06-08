@@ -8,6 +8,7 @@ from src.base.base_service import AsyncSession
 from src.features.task.entities import Task
 from src.features.task_and_assigner.entities import TaskAndAssigner
 from src.features.task_and_assigner.schemas.complete_dump_schema_update import CompleteDumpSchemaUpdate
+from src.features.task_and_assigner.schemas.read_dump_schema_update import ReadDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_schema import TaskAndAssignerSchema
 from src.features.task_and_assigner.schemas.task_and_assigner_schema_create import TaskAndAssignerSchemaCreate
 from src.features.task_and_assigner.schemas.task_and_assigner_schema_filter import TaskAndAssignerSchemaFilter
@@ -67,16 +68,6 @@ class TaskAndAssignerRepository(BaseRepo):
         task_and_assigner_ids = (await session.execute(query)).scalars()
         return task_and_assigner_ids
 
-    async def complete_task_and_assigners(
-        self, session: AsyncSession, id: int, schema_update: TaskAndAssignerSchemaUpdate
-    ) -> TaskAndAssignerSchema:
-        await session.execute(
-            update(TaskAndAssigner)
-            .where(TaskAndAssigner.task_id == id)
-            .values(schema_update.dict(exclude_unset=True))
-        )
-        return await self.get_by_id_without_activity(session, id)
-
     async def complete_task_for_assigner(
         self, session: AsyncSession, id: int, update_schema: CompleteDumpSchemaUpdate
     ) -> TaskAndAssignerSchema:
@@ -85,6 +76,17 @@ class TaskAndAssignerRepository(BaseRepo):
             .where(TaskAndAssigner.task_id == id)
             .values(is_completed=update_schema.is_completed,
                     complete_date=datetime.datetime.now())
+        )
+        return await self.get_by_id_without_activity(session, id)
+
+    async def read_task_for_assigner(
+        self, session: AsyncSession, id: int, update_schema: ReadDumpSchemaUpdate
+    ) -> TaskAndAssignerSchema:
+        await session.execute(
+            update(TaskAndAssigner)
+            .where(TaskAndAssigner.task_id == id)
+            .values(is_read=update_schema.is_read,
+                    read_date=datetime.datetime.now())
         )
         return await self.get_by_id_without_activity(session, id)
 

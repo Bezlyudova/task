@@ -11,15 +11,13 @@ from src.features.employee.services.employee_service import EmployeeService
 from src.features.task.schemas.task_schema import TaskSchema
 from src.features.task.schemas.task_schema_create import TaskSchemaCreate
 from src.features.task.schemas.task_schema_create_assigner import TaskSchemaCreateAssigner
-from src.features.task.schemas.task_schema_filter import TaskSchemaFilter
 from src.features.task.schemas.task_schema_filter_extended import TaskSchemaFilterExtended
 from src.features.task.schemas.task_schema_minimal import TaskSchemaMinimal
 from src.features.task.schemas.task_schema_update import TaskSchemaUpdate
 from src.features.task.schemas.task_schema_update_assigners import TaskSchemaUpdateAssigner
 from src.features.task.schemas.type_of_assigner_schema import TypeOfAssignerSchema
 from src.features.task_and_assigner.schemas.complete_dump_schema_update import CompleteDumpSchemaUpdate
-from src.features.task_and_assigner.schemas.task_and_assigner_dump_schema_update import TaskAndAssignerDumpSchemaUpdate
-from src.features.task_and_assigner.schemas.task_and_assigner_schema import TaskAndAssignerSchema
+from src.features.task_and_assigner.schemas.read_dump_schema_update import ReadDumpSchemaUpdate
 from src.features.task_and_assigner.schemas.task_and_assigner_schema_create import TaskAndAssignerSchemaCreate
 from src.features.task_and_assigner.services.task_and_assigner_service import TaskAndAssignerService
 from src.task_state_enum import TaskStateEnum
@@ -145,17 +143,6 @@ class TaskService(BaseService):
         return await self._create(
             schema_create=schema_create, session=session, is_system=False
         )
-
-    # @transactional
-    # async def create_system(
-    #     self,
-    #     schema_create: TaskSchemaCreateAssigner,
-    #     *,
-    #     session: Optional[AsyncSession] = None,
-    # ) -> TaskSchema:
-    #     return await self._create(
-    #         schema_create=schema_create, session=session, is_system=True
-    #     )
 
     @transactional
     async def update(
@@ -285,27 +272,15 @@ class TaskService(BaseService):
             return await self.repository.get_count_unreaded_task(session=session)
 
     @transactional
-    async def set_assigner_task_status(
+    async def read_assigner_task_status(
         self,
         task_id: int,
-        update_schema: TaskAndAssignerDumpSchemaUpdate,
+        update_schema: ReadDumpSchemaUpdate,
         session: AsyncSession,
     ) -> TaskSchema:
-        await self.task_and_assigner_service.set_assigner_task_status(
+        await self.task_and_assigner_service.read_assigner_task_status(
             task_id=task_id, update_schema=update_schema, session=session
         )
-        # task = await self.get_by_id_without_activity(id=task_id, session=session)
-        # list_completed = await self.task_and_assigner_service.get_completed(
-        #     session=session, task_id=task_id
-        # )
-        # if (
-        #     not (False in list_completed)
-        #     and list_completed
-        #     and task.state == TaskStateEnum.WORKS.value
-        # ):
-        #     await self.repository.complete_task(
-        #         task_id=task_id, session=session
-        #     )
         return await self.get_by_id_without_activity(id=task_id, session=session)
 
     @transactional
@@ -355,35 +330,3 @@ class TaskService(BaseService):
         self, ids: List[int], session: AsyncSession
     ) -> List[TaskSchemaMinimal]:
         return await self.repository.get_all_tasks_by_ids(ids=ids, session=session)
-
-    # @transactional
-    # async def complete_task_with_status(
-    #     self, task_id, status: TaskStateEnum, session: Optional[AsyncSession] = None
-    # ):
-    #     task: TaskSchema = await self.get_by_id_without_activity(
-    #         id=task_id, session=session
-    #     )
-    #     await self.repository.update(
-    #         session=session,
-    #         id=task_id,
-    #         schema_update=TaskSchemaUpdate(
-    #             state=status,
-    #             is_completed=True,
-    #             completed_date=datetime.datetime.now(),
-    #         ),
-    #     )
-    #     guids: Set[str] = set([assigner.employee.guid for assigner in task.assigners])
-    #     await self.notification_service.notify(
-    #         to_employees_guids=list(guids),
-    #         message=f"Задача <{task.name}> завершена со статусом <{status}>",
-    #         from_entity_type=TypeOfEntity.TASK,
-    #         from_entity_id=task_id,
-    #         task_type=task.task_type,
-    #     )
-    #     if task.parent_id is not None:
-    #         await self.task_comment_service.create(TaskCommentSchemaCreate(
-    #             main_task_id=task.parent_id,
-    #             task_id=task.id,
-    #             note=f"Выполнена подзадача с темой \"{task.name}\".",
-    #             employee_id=self.req.user.id,
-    #         ), session=session)
