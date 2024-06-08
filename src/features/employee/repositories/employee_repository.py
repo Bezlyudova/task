@@ -1,7 +1,7 @@
 from itertools import chain
-from typing import Type
+from typing import Type, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from src.base.base_exception import BaseExceptionCustom
 from src.base.base_repository import BaseRepo, ModelType, SchemaType, CreateSchemaType
@@ -63,3 +63,25 @@ class EmployeeRepository(BaseRepo):
             )
         result = self.schema.from_orm(res)
         return result
+
+    def add_full_name_filter_to_query_options(
+        self, query, full_name: Optional[str]
+    ) -> int:
+        if full_name:
+            query.append(
+                func.to_tsvector(
+                    func.concat_ws(
+                        " ",
+                        self.model.name,
+                        self.model.middle_name,
+                        self.model.last_name,
+                    )
+                ).bool_op("@@")(
+                    func.to_tsquery(f'{":* & ".join(full_name.strip().split(" "))}:*')
+                )
+            )
+        return query
+
+    def get_filter_query(self, filter_schema, without_deleted):
+        res = super().get_filter_query(filter_schema, without_deleted)
+        return self.add_full_name_filter_to_query_options(res, filter_schema.full_name)

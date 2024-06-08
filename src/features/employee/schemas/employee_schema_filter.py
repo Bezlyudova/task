@@ -9,7 +9,7 @@ class EmployeeSchemaFilter(BaseModel):
     phone_number: str | None
     organisation_id: int | None
     department_id: int | None
-    # full_name: str | None
+    full_name: str | None
     organisation_id: int | None
     department_id: int | None
     position_id: int | None

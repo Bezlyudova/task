@@ -98,6 +98,7 @@ async def get(
         middle_name: Optional[str] = Query(
             None, example="Петрович", description="Отчество (если есть)"
         ),
+        full_name: Optional[str] = Query(None, example="Зубенко Михаил", description="ФИО"),
         email: Optional[str] = Query(
             None,
             example="zubenko@belmail.by",
@@ -122,7 +123,7 @@ async def get(
             middle_name=middle_name,
             email=email,
             phone_number=phone_number,
-            # full_name=full_name,
+            full_name=full_name,
             organisation_id=organisation_id,
             department_id=department_id,
             position_id=position_id,
