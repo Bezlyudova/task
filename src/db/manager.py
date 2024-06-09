@@ -1,11 +1,11 @@
 from typing import Optional
 
-from fastapi import Depends, Request
+from fastapi import Request
 from fastapi_users import BaseUserManager, IntegerIDMixin, FastAPIUsers
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 
 from src.db.auth import auth_backend
-from src.db.session import transactional, get_session
+from src.db.session import get_session
 from src.features.employee.entities.employee_entity import Employee
 
 SECRET = "SECRET"

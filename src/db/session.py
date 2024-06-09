@@ -11,7 +11,6 @@ from src.db.config import DB_USER, DB_PASS, DB_HOST, DB_NAME
 db_engine = create_async_engine(
     f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}/{DB_NAME}",
     echo=False,
-    # pool_size=config.db_pool_size,
     max_overflow=4444,
     pool_recycle=3600,
 )

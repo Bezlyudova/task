@@ -2,16 +2,19 @@ from itertools import chain
 from typing import Type, Optional
 
 from sqlalchemy import select, func
+from sqlalchemy.orm import joinedload, with_loader_criteria
 
 from src.base.base_exception import BaseExceptionCustom
 from src.base.base_repository import BaseRepo, ModelType, SchemaType, CreateSchemaType
 from src.base.base_service import AsyncSession
+from src.features.department.entities.department_entity import Department
 from src.features.employee.entities.employee_entity import Employee
 from src.features.employee.schemas.employee_schema import EmployeeSchema
 from src.features.employee.schemas.employee_schema_create import EmployeeSchemaCreate
 from src.features.employee.schemas.employee_schema_filter import EmployeeSchemaFilter
 from src.features.employee.schemas.employee_schema_minimal import EmployeeSchemaMinimal
 from src.features.employee.schemas.employee_schema_update import EmployeeSchemaUpdate
+from src.features.position.entities.position_entity import Position
 
 
 class EmployeeRepository(BaseRepo):
@@ -39,15 +42,19 @@ class EmployeeRepository(BaseRepo):
     def filter_schema(self) -> Type[EmployeeSchemaFilter]:
         return EmployeeSchemaFilter
 
-    # @property
-    # def common_options(self):
-    #     return [
-    #         *super().common_options,
-    #         (
-    #             joinedload(Employer.position).joinedload(Position.department),
-    #             with_loader_criteria(Position, Position.is_deleted != True),
-    #         ),
-    #     ]
+    @property
+    def common_options(self):
+        return [
+            *super().common_options,
+            (
+                joinedload(Employee.position).joinedload(Position.department).joinedload(Department.organisation),
+                with_loader_criteria(Department, Department.is_deleted != True),
+            ),
+            (
+                joinedload(Employee.department).joinedload(Department.organisation),
+                with_loader_criteria(Department, Department.is_deleted != True),
+            ),
+        ]
 
 
     async def login(

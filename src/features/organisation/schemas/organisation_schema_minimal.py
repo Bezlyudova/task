@@ -7,3 +7,9 @@ class OrganisationSchemaMinimal(BaseSchema):
     name: str
     note: str | None
     master: EmployeeSchemaMinimal | None
+
+
+class OrganisationSchemaMinimalForDep(BaseSchema):
+    phone_number: str
+    name: str
+    note: str | None
