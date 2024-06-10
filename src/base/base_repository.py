@@ -278,7 +278,8 @@ class BaseRepo(
                     data_query.append(
                         self.model.__getattribute__(self.model, k).ilike(f"%{str(v)}%")
                     )
-                elif isinstance(v, int) or isinstance(v, enum.Enum) or isinstance(v, datetime.datetime):
+                # elif isinstance(v, int) or isinstance(v, enum.Enum) or isinstance(v, datetime.datetime):
+                elif isinstance(v, int) or isinstance(v, enum.Enum):
                     data_query.append(self.model.__getattribute__(self.model, k) == v)
 
                 elif isinstance(v, list):
