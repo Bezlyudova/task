@@ -286,3 +286,22 @@ class TaskRepository(BaseRepo):
             )
             .values(is_expired=True, expired_date=datetime.datetime.now())
         )
+
+    async def create_system(
+        self,
+        session: AsyncSession,
+        schema_create: CreateSchemaType,
+    ) -> SchemaType:
+        """
+        Метод для создания записей
+        :param session: sqlalchemy session abstraction
+        :param schema_create: Данные необходимые для создания записи
+        :return: Новая запись
+        """
+        new_entity = self.model(**schema_create.dict())
+        new_entity.writer_id = 1
+
+        session.add(new_entity)
+        new_entity.create_date = datetime.datetime.now()
+        await session.flush()
+        return self.schema(**new_entity.__dict__)

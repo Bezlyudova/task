@@ -118,7 +118,7 @@ class BaseRepo(
         """
         new_entity = self.model(**schema_create.dict())
         new_entity.writer_id = 1
-        # new_entity.create_id = 1
+        new_entity.create_id = 1
 
         session.add(new_entity)
         new_entity.create_date = datetime.datetime.now()
