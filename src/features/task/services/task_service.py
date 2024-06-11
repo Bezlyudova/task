@@ -103,7 +103,7 @@ class TaskService(BaseService):
         is_system: bool,
     ):
         task_schema_create: TaskSchemaCreate = TaskSchemaCreate(**dict(schema_create))
-        task_schema_create.create_id = 1
+        # task_schema_create.create_id = 1
 
         schema_create = await self._assigners_transform(
             schema_create=schema_create, session=session
