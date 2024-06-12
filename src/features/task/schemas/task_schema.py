@@ -20,8 +20,8 @@ class TaskSchema(BaseSchema):
     is_expired: bool
     # expired_date: Optional[datetime]
 
-    # started_by: Optional[int]
-    # started: EmployeeSchemaMinimal | None
+    started_by: int | None = None
+    started: EmployeeSchemaMinimal | None = None
     # start_date: Optional[datetime]
 
     is_completed: bool
