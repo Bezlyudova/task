@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List
 
 from src.base.base_schemas import BaseSchema
 from src.features.employee.schemas.employee_schema_minimal import EmployeeSchemaMinimal
@@ -11,21 +11,17 @@ class TaskSchema(BaseSchema):
     name: str | None
     description: str | None
 
-    # warning_note: Optional[str]
-    # is_priority: bool
-
     dead_line_date: datetime | None
-    # new_dead_line_date: Optional[datetime]
 
     is_expired: bool
-    # expired_date: Optional[datetime]
+    expired_date: datetime | None = None
 
     started_by: int | None = None
     started: EmployeeSchemaMinimal | None = None
-    # start_date: Optional[datetime]
+    start_date: datetime | None = None
 
     is_completed: bool
-    # completed_date: Optional[datetime]
+    completed_date: datetime | None = None
 
     assigners: List[TaskAndAssignerSchema] | None = None
 
